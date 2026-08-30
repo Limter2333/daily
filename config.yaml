@@ -1,0 +1,51 @@
+# 每日早报晚报系统配置
+
+app:
+  name: "每日早报晚报系统"
+  version: "1.0.0"
+  debug: true
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+
+database:
+  path: "data/daily.db"
+
+scheduler:
+  morning_time: "07:30"
+  evening_time: "20:00"
+  aggregate_interval: 30  # 分钟
+
+news:
+  max_per_source: 10
+  max_total: 50
+  categories:
+    - finance
+    - tech
+    - semiconductor
+    - ai
+    - consumer
+    - other
+
+ai:
+  provider: "openai"  # openai / anthropic
+  api_key: ""  # 在 .env 文件中设置
+  model: "mimo-v2.5-pro"  # 小米 API 支持的模型
+  base_url: "https://api.xiaomimimo.com/v1"  # 小米 API 地址
+
+email:
+  enabled: false
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+  username: ""
+  password: ""
+  recipient: ""
+
+push:
+  enabled: false
+  platform: "wechat"  # wechat / dingtalk
+  webhook_url: ""
+
+weather:
+  city: "Beijing"

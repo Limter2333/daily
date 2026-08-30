@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    container_name: daily-briefing
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data        # SQLite 数据库持久化
+      - ./logs:/app/logs        # 日志文件持久化
+    env_file:
+      - .env                    # AI API 密钥等配置
+    environment:
+      - TZ=Asia/Shanghai        # 时区设置
+    restart: unless-stopped
