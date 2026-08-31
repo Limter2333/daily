@@ -171,6 +171,8 @@ export interface MarketIndex {
   low?: number;
   open?: number;
   prevClose?: number;
+  unit?: string;
+  category?: string;
 }
 
 /**

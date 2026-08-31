@@ -103,17 +103,68 @@ export default function MarketPage() {
           {/* 指数区域 */}
           {data?.indices && data.indices.length > 0 && (
             <div className="mb-6">
-              <div className="flex items-center space-x-2 mb-4">
-                <TrendingUp className="w-5 h-5 text-primary-600" />
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {activeMarket === 'commodities' ? '大宗商品行情' : '主要指数'}
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {data.indices.map((index) => (
-                  <IndexCard key={index.code} index={index} />
-                ))}
-              </div>
+              {activeMarket === 'commodities' ? (
+                // 大宗商品按分类显示
+                <>
+                  {/* 贵金属 */}
+                  {data.indices.some(i => i.category === 'precious') && (
+                    <div className="mb-6">
+                      <div className="flex items-center space-x-2 mb-4">
+                        <TrendingUp className="w-5 h-5 text-yellow-600" />
+                        <h3 className="text-lg font-semibold text-gray-900">贵金属</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {data.indices.filter(i => i.category === 'precious').map((index) => (
+                          <IndexCard key={index.code} index={index} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 能源 */}
+                  {data.indices.some(i => i.category === 'energy') && (
+                    <div className="mb-6">
+                      <div className="flex items-center space-x-2 mb-4">
+                        <TrendingUp className="w-5 h-5 text-orange-600" />
+                        <h3 className="text-lg font-semibold text-gray-900">能源</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {data.indices.filter(i => i.category === 'energy').map((index) => (
+                          <IndexCard key={index.code} index={index} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 金属 */}
+                  {data.indices.some(i => i.category === 'metal') && (
+                    <div className="mb-6">
+                      <div className="flex items-center space-x-2 mb-4">
+                        <TrendingUp className="w-5 h-5 text-blue-600" />
+                        <h3 className="text-lg font-semibold text-gray-900">金属</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {data.indices.filter(i => i.category === 'metal').map((index) => (
+                          <IndexCard key={index.code} index={index} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                // 其他市场直接显示
+                <>
+                  <div className="flex items-center space-x-2 mb-4">
+                    <TrendingUp className="w-5 h-5 text-primary-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">主要指数</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {data.indices.map((index) => (
+                      <IndexCard key={index.code} index={index} />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -162,7 +213,7 @@ export default function MarketPage() {
           )}
 
           {/* 其他市场提示 */}
-          {activeMarket !== 'cn' && (
+          {activeMarket !== 'cn' && activeMarket !== 'commodities' && (
             <div className="bg-white rounded-xl shadow-sm p-8 text-center">
               <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -171,7 +222,6 @@ export default function MarketPage() {
               <p className="text-gray-500">
                 {activeMarket === 'us' && '美股板块和个股数据开发中...'}
                 {activeMarket === 'hk' && '港股板块和个股数据开发中...'}
-                {activeMarket === 'commodities' && '更多大宗商品数据开发中...'}
               </p>
             </div>
           )}

@@ -636,10 +636,11 @@ class TestGetCommodities:
             mock_ak.futures_foreign_commodity_realtime.side_effect = Exception("不支持")
             result = await service.get_commodities()
 
+        # 国际商品失败，只有国内黄金
         assert len(result) >= 1
         gold = next((c for c in result if c["code"] == "AU9999"), None)
         assert gold is not None
-        assert gold["name"] == "黄金"
+        assert gold["name"] == "国内黄金"
         assert gold["current"] == 500.0
         assert gold["unit"] == "元/克"
 
@@ -660,10 +661,11 @@ class TestGetCommodities:
             mock_ak.futures_foreign_commodity_realtime.return_value = df_intl
             result = await service.get_commodities()
 
-        assert len(result) == 2
+        # 现在会获取多个商品（黄金、白银、原油、铜、国内黄金）
+        assert len(result) >= 2
         intl = next((c for c in result if c["code"] == "XAUUSD"), None)
         assert intl is not None
-        assert intl["name"] == "国际黄金"
+        assert intl["name"] == "黄金"
         assert intl["current"] == 2000.0
         assert intl["unit"] == "美元/盎司"
 
@@ -709,8 +711,10 @@ class TestGetCommodities:
             mock_ak.futures_foreign_commodity_realtime.return_value = df_intl
             result = await service.get_commodities()
 
-        assert len(result) == 1
-        assert result[0]["code"] == "XAUUSD"
+        # 国内数据为空，但国际数据正常
+        assert len(result) >= 1
+        gold = next((c for c in result if c["code"] == "XAUUSD"), None)
+        assert gold is not None
 
 
 class TestGetMarketOverview:
@@ -1426,9 +1430,10 @@ class TestGetCommoditiesEdgeCases:
             mock_ak.futures_foreign_commodity_realtime.side_effect = Exception("不支持")
             result = await service.get_commodities()
 
-        gold = result[0]
+        gold = next((c for c in result if c["code"] == "AU9999"), None)
+        assert gold is not None
         assert gold["code"] == "AU9999"
-        assert gold["name"] == "黄金"
+        assert gold["name"] == "国内黄金"
         assert gold["unit"] == "元/克"
         assert gold["current"] == 500.0
 
@@ -1450,7 +1455,7 @@ class TestGetCommoditiesEdgeCases:
             result = await service.get_commodities()
 
         intl = next(c for c in result if c["code"] == "XAUUSD")
-        assert intl["name"] == "国际黄金"
+        assert intl["name"] == "黄金"
         assert intl["unit"] == "美元/盎司"
         assert intl["current"] == 2000.0
         assert intl["change"] == 15.0

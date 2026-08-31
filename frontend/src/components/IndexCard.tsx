@@ -29,6 +29,15 @@ export default function IndexCard({ index, compact = false }: IndexCardProps) {
     return num.toFixed(2);
   };
 
+  const getCategoryLabel = (category?: string) => {
+    switch (category) {
+      case 'precious': return '贵金属';
+      case 'energy': return '能源';
+      case 'metal': return '金属';
+      default: return '';
+    }
+  };
+
   const TrendIcon = isPositive ? TrendingUp : isNegative ? TrendingDown : Minus;
 
   if (compact) {
@@ -51,7 +60,14 @@ export default function IndexCard({ index, compact = false }: IndexCardProps) {
   return (
     <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-gray-600">{index.name}</h3>
+        <div className="flex items-center space-x-2">
+          <h3 className="text-sm font-medium text-gray-600">{index.name}</h3>
+          {index.category && (
+            <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-500 rounded-full">
+              {getCategoryLabel(index.category)}
+            </span>
+          )}
+        </div>
         <div className={`p-1.5 rounded-lg ${bgColorClass}`}>
           <TrendIcon className={`w-4 h-4 ${colorClass}`} />
         </div>
@@ -59,6 +75,9 @@ export default function IndexCard({ index, compact = false }: IndexCardProps) {
 
       <div className={`text-2xl font-bold ${colorClass} mb-2`}>
         {formatNumber(index.current)}
+        {index.unit && (
+          <span className="text-sm font-normal text-gray-500 ml-1">{index.unit}</span>
+        )}
       </div>
 
       <div className="flex items-center space-x-3">

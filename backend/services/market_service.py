@@ -285,52 +285,82 @@ class MarketService:
         if cached:
             return cached
 
-        try:
-            # 获取上海黄金交易所数据
-            df = await self._run_in_thread(
-                ak.spot_golden_benchmark_sge
-            )
+        commodities = []
 
-            commodities = []
-            if df is not None and not df.empty:
-                # 取最新的数据
-                latest = df.iloc[-1] if len(df) > 0 else None
-                if latest is not None:
-                    # 使用早盘价或晚盘价
-                    price = float(latest.get("早盘价", 0)) or float(latest.get("晚盘价", 0))
-                    if price > 0:
-                        commodities.append({
-                            "code": "AU9999",
-                            "name": "黄金",
-                            "current": price,
-                            "change": 0,
-                            "changePercent": 0,
-                            "unit": "元/克",
-                        })
+        # 定义要获取的商品列表
+        commodity_symbols = [
+            {"symbol": "XAU", "name": "黄金", "code": "XAUUSD", "unit": "美元/盎司", "category": "precious"},
+            {"symbol": "XAG", "name": "白银", "code": "XAGUSD", "unit": "美元/盎司", "category": "precious"},
+            {"symbol": "CL", "name": "原油", "code": "CL", "unit": "美元/桶", "category": "energy"},
+            {"symbol": "HG", "name": "铜", "code": "HG", "unit": "美元/磅", "category": "metal"},
+        ]
 
-            # 获取国际贵金属 - 使用期货外盘数据
+        # 并行获取所有商品数据
+        async def fetch_commodity(symbol_info):
             try:
-                df_intl = await self._run_in_thread(
+                df = await self._run_in_thread(
                     ak.futures_foreign_commodity_realtime,
-                    symbol="XAU"
+                    symbol=symbol_info["symbol"]
                 )
-                if df_intl is not None and not df_intl.empty:
-                    row = df_intl.iloc[0]
-                    commodities.append({
-                        "code": "XAUUSD",
-                        "name": "国际黄金",
+                if df is not None and not df.empty:
+                    row = df.iloc[0]
+                    return {
+                        "code": symbol_info["code"],
+                        "name": symbol_info["name"],
                         "current": float(row.get("最新价", 0)),
                         "change": float(row.get("涨跌额", 0)),
                         "changePercent": float(row.get("涨跌幅", 0)),
-                        "unit": "美元/盎司",
-                    })
-            except Exception as intl_err:
-                self.logger.warning(f"获取国际贵金属失败: {intl_err}")
+                        "open": float(row.get("开盘价", 0)) if "开盘价" in row.index else 0,
+                        "high": float(row.get("最高价", 0)) if "最高价" in row.index else 0,
+                        "low": float(row.get("最低价", 0)) if "最低价" in row.index else 0,
+                        "prevClose": float(row.get("昨日收盘价", 0)) if "昨日收盘价" in row.index else 0,
+                        "unit": symbol_info["unit"],
+                        "category": symbol_info["category"],
+                    }
+            except Exception as e:
+                self.logger.warning(f"获取{symbol_info['name']}失败: {e}")
+            return None
+
+        try:
+            # 并行获取所有商品
+            tasks = [fetch_commodity(info) for info in commodity_symbols]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            # 收集成功的结果
+            for result in results:
+                if result is not None and not isinstance(result, Exception):
+                    commodities.append(result)
+
+            # 获取国内黄金（上海黄金交易所）
+            try:
+                df_domestic = await self._run_in_thread(
+                    ak.spot_golden_benchmark_sge
+                )
+                if df_domestic is not None and not df_domestic.empty:
+                    latest = df_domestic.iloc[-1] if len(df_domestic) > 0 else None
+                    if latest is not None:
+                        price = float(latest.get("早盘价", 0)) or float(latest.get("晚盘价", 0))
+                        if price > 0:
+                            commodities.append({
+                                "code": "AU9999",
+                                "name": "国内黄金",
+                                "current": price,
+                                "change": 0,
+                                "changePercent": 0,
+                                "open": 0,
+                                "high": 0,
+                                "low": 0,
+                                "prevClose": 0,
+                                "unit": "元/克",
+                                "category": "precious",
+                            })
+            except Exception as e:
+                self.logger.warning(f"获取国内黄金失败: {e}")
 
             self._set_cache(cache_key, commodities)
             return commodities
         except Exception as e:
-            self.logger.error(f"获取贵金属失败: {e}")
+            self.logger.error(f"获取大宗商品失败: {e}")
             return []
 
     # ==================== 综合接口 ====================
