@@ -449,6 +449,85 @@ async def get_scheduler_jobs():
     return scheduler.get_jobs()
 
 
+# ==================== 市场数据 API ====================
+
+from backend.services.market_service import market_service
+
+@app.get("/api/market/overview", tags=["市场数据"])
+async def get_market_overview():
+    """获取首页市场概览（精选指数+贵金属）"""
+    try:
+        return await market_service.get_market_overview()
+    except Exception as e:
+        logger.error(f"获取市场概览失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/market/indices", tags=["市场数据"])
+async def get_market_indices(market: str = Query("cn", description="市场: cn/us/hk")):
+    """获取市场指数"""
+    try:
+        if market == "cn":
+            return await market_service.get_cn_indices()
+        elif market == "us":
+            return await market_service.get_us_indices()
+        elif market == "hk":
+            return await market_service.get_hk_indices()
+        else:
+            raise HTTPException(status_code=400, detail="市场参数无效，支持: cn/us/hk")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取市场指数失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/market/sectors", tags=["市场数据"])
+async def get_market_sectors(market: str = Query("cn", description="市场: cn")):
+    """获取板块涨跌排行"""
+    try:
+        if market == "cn":
+            return await market_service.get_cn_sectors()
+        else:
+            return {"rise": [], "fall": []}
+    except Exception as e:
+        logger.error(f"获取板块排行失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/market/stocks", tags=["市场数据"])
+async def get_market_stocks(market: str = Query("cn", description="市场: cn")):
+    """获取个股涨跌排行"""
+    try:
+        if market == "cn":
+            return await market_service.get_cn_stocks()
+        else:
+            return {"rise": [], "fall": []}
+    except Exception as e:
+        logger.error(f"获取个股排行失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/market/detail", tags=["市场数据"])
+async def get_market_detail(market: str = Query("cn", description="市场: cn/us/hk/commodities")):
+    """获取市场详情（指数+板块+个股）"""
+    try:
+        return await market_service.get_market_detail(market)
+    except Exception as e:
+        logger.error(f"获取市场详情失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/market/commodities", tags=["市场数据"])
+async def get_commodities():
+    """获取贵金属/大宗商品行情"""
+    try:
+        return await market_service.get_commodities()
+    except Exception as e:
+        logger.error(f"获取贵金属行情失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ==================== 系统 API ====================
 
 @app.get("/api/health", tags=["系统"])

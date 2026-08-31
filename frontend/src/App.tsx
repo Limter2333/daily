@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
+import MarketPage from './components/MarketPage';
 import BriefingView from './components/briefingView';
 import Settings from './components/Settings';
 import { healthCheck } from './services/api';
@@ -57,6 +58,7 @@ function App() {
               {/* 导航链接 */}
               <nav className="flex items-center space-x-2">
                 <NavLink to="/">首页</NavLink>
+                <NavLink to="/market">市场</NavLink>
                 <NavLink to="/briefings">早报晚报</NavLink>
                 <NavLink to="/settings">设置</NavLink>
               </nav>
@@ -88,6 +90,7 @@ function App() {
         <main className="py-6">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/market" element={<MarketPage />} />
             <Route path="/briefings" element={<BriefingView />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>

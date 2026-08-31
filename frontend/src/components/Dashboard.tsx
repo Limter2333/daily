@@ -9,6 +9,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import NewsCard from './NewsCard';
+import MarketOverview from './MarketOverview';
 import { getLatestNews, getCategoriesSummary, triggerAggregation, getStats } from '../services/api';
 import type { NewsItem, CategorySummary, SystemStats, NewsCategory } from '../types';
 import { CATEGORY_CONFIG } from '../types';
@@ -95,6 +96,9 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* 市场概览 */}
+      <MarketOverview />
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

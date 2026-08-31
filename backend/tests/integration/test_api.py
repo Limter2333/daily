@@ -234,3 +234,360 @@ class TestTriggerAPI:
         """无效发送类型应该返回400"""
         response = await async_client.post("/api/send/invalid")
         assert response.status_code == 400
+
+
+# ==================== 市场数据 API 测试 ====================
+
+class TestMarketOverviewAPI:
+    """市场概览 API 测试"""
+
+    @pytest.mark.asyncio
+    async def test_get_market_overview_success(self, async_client: AsyncClient):
+        """正常获取市场概览"""
+        from unittest.mock import patch, AsyncMock
+
+        mock_data = {
+            "indices": [
+                {"code": "000001", "name": "上证指数", "current": 3000.0, "change": 10.0, "changePercent": 0.33}
+            ],
+            "commodities": [
+                {"code": "AU9999", "name": "黄金", "current": 500.0}
+            ],
+            "updateTime": "2025-01-01T08:00:00"
+        }
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_market_overview = AsyncMock(return_value=mock_data)
+            response = await async_client.get("/api/market/overview")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "indices" in data
+        assert "commodities" in data
+        assert "updateTime" in data
+
+    @pytest.mark.asyncio
+    async def test_get_market_overview_error(self, async_client: AsyncClient):
+        """服务异常时应该返回500"""
+        from unittest.mock import patch, AsyncMock
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_market_overview = AsyncMock(side_effect=Exception("服务错误"))
+            response = await async_client.get("/api/market/overview")
+
+        assert response.status_code == 500
+
+
+class TestMarketIndicesAPI:
+    """市场指数 API 测试"""
+
+    @pytest.mark.asyncio
+    async def test_get_cn_indices(self, async_client: AsyncClient):
+        """获取中国指数"""
+        from unittest.mock import patch, AsyncMock
+
+        mock_indices = [
+            {"code": "000001", "name": "上证指数", "current": 3000.0},
+            {"code": "399001", "name": "深证成指", "current": 10000.0},
+        ]
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_cn_indices = AsyncMock(return_value=mock_indices)
+            response = await async_client.get("/api/market/indices?market=cn")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        assert data[0]["code"] == "000001"
+
+    @pytest.mark.asyncio
+    async def test_get_us_indices(self, async_client: AsyncClient):
+        """获取美国指数"""
+        from unittest.mock import patch, AsyncMock
+
+        mock_indices = [
+            {"code": "标普500", "name": "标普500", "current": 5000.0},
+        ]
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_us_indices = AsyncMock(return_value=mock_indices)
+            response = await async_client.get("/api/market/indices?market=us")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+
+    @pytest.mark.asyncio
+    async def test_get_hk_indices(self, async_client: AsyncClient):
+        """获取香港指数"""
+        from unittest.mock import patch, AsyncMock
+
+        mock_indices = [
+            {"code": "HSI", "name": "恒生指数", "current": 18000.0},
+        ]
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_hk_indices = AsyncMock(return_value=mock_indices)
+            response = await async_client.get("/api/market/indices?market=hk")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+
+    @pytest.mark.asyncio
+    async def test_get_indices_default_market_is_cn(self, async_client: AsyncClient):
+        """默认市场参数应该是 cn"""
+        from unittest.mock import patch, AsyncMock
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_cn_indices = AsyncMock(return_value=[])
+            response = await async_client.get("/api/market/indices")
+
+        assert response.status_code == 200
+        mock_service.get_cn_indices.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_get_indices_invalid_market(self, async_client: AsyncClient):
+        """无效市场参数应该返回400"""
+        response = await async_client.get("/api/market/indices?market=japan")
+        assert response.status_code == 400
+        assert "市场参数无效" in response.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_get_indices_service_error(self, async_client: AsyncClient):
+        """服务异常时应该返回500"""
+        from unittest.mock import patch, AsyncMock
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_cn_indices = AsyncMock(side_effect=Exception("服务错误"))
+            response = await async_client.get("/api/market/indices?market=cn")
+
+        assert response.status_code == 500
+
+
+class TestMarketSectorsAPI:
+    """板块 API 测试"""
+
+    @pytest.mark.asyncio
+    async def test_get_cn_sectors(self, async_client: AsyncClient):
+        """获取中国板块排行"""
+        from unittest.mock import patch, AsyncMock
+
+        mock_sectors = {
+            "rise": [{"name": "半导体", "changePercent": 3.5}],
+            "fall": [{"name": "房地产", "changePercent": -2.1}],
+        }
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_cn_sectors = AsyncMock(return_value=mock_sectors)
+            response = await async_client.get("/api/market/sectors?market=cn")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "rise" in data
+        assert "fall" in data
+        assert len(data["rise"]) == 1
+
+    @pytest.mark.asyncio
+    async def test_get_sectors_default_market_is_cn(self, async_client: AsyncClient):
+        """默认市场应该是 cn"""
+        from unittest.mock import patch, AsyncMock
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_cn_sectors = AsyncMock(return_value={"rise": [], "fall": []})
+            response = await async_client.get("/api/market/sectors")
+
+        assert response.status_code == 200
+        mock_service.get_cn_sectors.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_get_sectors_non_cn_returns_empty(self, async_client: AsyncClient):
+        """非 cn 市场应该返回空数据"""
+        response = await async_client.get("/api/market/sectors?market=us")
+        assert response.status_code == 200
+        data = response.json()
+        assert data == {"rise": [], "fall": []}
+
+    @pytest.mark.asyncio
+    async def test_get_sectors_service_error(self, async_client: AsyncClient):
+        """服务异常时应该返回500"""
+        from unittest.mock import patch, AsyncMock
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_cn_sectors = AsyncMock(side_effect=Exception("服务错误"))
+            response = await async_client.get("/api/market/sectors?market=cn")
+
+        assert response.status_code == 500
+
+
+class TestMarketStocksAPI:
+    """个股 API 测试"""
+
+    @pytest.mark.asyncio
+    async def test_get_cn_stocks(self, async_client: AsyncClient):
+        """获取中国个股排行"""
+        from unittest.mock import patch, AsyncMock
+
+        mock_stocks = {
+            "rise": [{"code": "000001", "name": "股票A", "changePercent": 5.0}],
+            "fall": [{"code": "000002", "name": "股票B", "changePercent": -3.0}],
+        }
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_cn_stocks = AsyncMock(return_value=mock_stocks)
+            response = await async_client.get("/api/market/stocks?market=cn")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "rise" in data
+        assert "fall" in data
+
+    @pytest.mark.asyncio
+    async def test_get_stocks_default_market_is_cn(self, async_client: AsyncClient):
+        """默认市场应该是 cn"""
+        from unittest.mock import patch, AsyncMock
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_cn_stocks = AsyncMock(return_value={"rise": [], "fall": []})
+            response = await async_client.get("/api/market/stocks")
+
+        assert response.status_code == 200
+        mock_service.get_cn_stocks.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_get_stocks_non_cn_returns_empty(self, async_client: AsyncClient):
+        """非 cn 市场应该返回空数据"""
+        response = await async_client.get("/api/market/stocks?market=us")
+        assert response.status_code == 200
+        data = response.json()
+        assert data == {"rise": [], "fall": []}
+
+    @pytest.mark.asyncio
+    async def test_get_stocks_service_error(self, async_client: AsyncClient):
+        """服务异常时应该返回500"""
+        from unittest.mock import patch, AsyncMock
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_cn_stocks = AsyncMock(side_effect=Exception("服务错误"))
+            response = await async_client.get("/api/market/stocks?market=cn")
+
+        assert response.status_code == 500
+
+
+class TestMarketDetailAPI:
+    """市场详情 API 测试"""
+
+    @pytest.mark.asyncio
+    async def test_get_cn_detail(self, async_client: AsyncClient):
+        """获取中国市场详情"""
+        from unittest.mock import patch, AsyncMock
+
+        mock_detail = {
+            "indices": [{"code": "000001", "name": "上证指数"}],
+            "sectors": {"rise": [{"name": "半导体"}], "fall": []},
+            "stocks": {"rise": [], "fall": [{"code": "000002"}]},
+            "updateTime": "2025-01-01T08:00:00",
+        }
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_market_detail = AsyncMock(return_value=mock_detail)
+            response = await async_client.get("/api/market/detail?market=cn")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "indices" in data
+        assert "sectors" in data
+        assert "stocks" in data
+        assert "updateTime" in data
+
+    @pytest.mark.asyncio
+    async def test_get_detail_default_market_is_cn(self, async_client: AsyncClient):
+        """默认市场应该是 cn"""
+        from unittest.mock import patch, AsyncMock
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_market_detail = AsyncMock(return_value={
+                "indices": [], "sectors": {"rise": [], "fall": []},
+                "stocks": {"rise": [], "fall": []}, "updateTime": "2025-01-01T08:00:00"
+            })
+            response = await async_client.get("/api/market/detail")
+
+        assert response.status_code == 200
+        mock_service.get_market_detail.assert_called_once_with("cn")
+
+    @pytest.mark.asyncio
+    async def test_get_us_detail(self, async_client: AsyncClient):
+        """获取美国市场详情"""
+        from unittest.mock import patch, AsyncMock
+
+        mock_detail = {
+            "indices": [{"code": "标普500"}],
+            "sectors": {"rise": [], "fall": []},
+            "stocks": {"rise": [], "fall": []},
+            "updateTime": "2025-01-01T08:00:00",
+        }
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_market_detail = AsyncMock(return_value=mock_detail)
+            response = await async_client.get("/api/market/detail?market=us")
+
+        assert response.status_code == 200
+        mock_service.get_market_detail.assert_called_once_with("us")
+
+    @pytest.mark.asyncio
+    async def test_get_detail_service_error(self, async_client: AsyncClient):
+        """服务异常时应该返回500"""
+        from unittest.mock import patch, AsyncMock
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_market_detail = AsyncMock(side_effect=Exception("服务错误"))
+            response = await async_client.get("/api/market/detail?market=cn")
+
+        assert response.status_code == 500
+
+
+class TestCommoditiesAPI:
+    """贵金属 API 测试"""
+
+    @pytest.mark.asyncio
+    async def test_get_commodities(self, async_client: AsyncClient):
+        """获取贵金属行情"""
+        from unittest.mock import patch, AsyncMock
+
+        mock_commodities = [
+            {"code": "AU9999", "name": "黄金", "current": 500.0, "unit": "元/克"},
+            {"code": "XAUUSD", "name": "国际黄金", "current": 2000.0, "unit": "美元/盎司"},
+        ]
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_commodities = AsyncMock(return_value=mock_commodities)
+            response = await async_client.get("/api/market/commodities")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        assert data[0]["code"] == "AU9999"
+        assert data[1]["code"] == "XAUUSD"
+
+    @pytest.mark.asyncio
+    async def test_get_commodities_empty(self, async_client: AsyncClient):
+        """无数据时应该返回空列表"""
+        from unittest.mock import patch, AsyncMock
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_commodities = AsyncMock(return_value=[])
+            response = await async_client.get("/api/market/commodities")
+
+        assert response.status_code == 200
+        assert response.json() == []
+
+    @pytest.mark.asyncio
+    async def test_get_commodities_service_error(self, async_client: AsyncClient):
+        """服务异常时应该返回500"""
+        from unittest.mock import patch, AsyncMock
+
+        with patch("backend.main.market_service") as mock_service:
+            mock_service.get_commodities = AsyncMock(side_effect=Exception("服务错误"))
+            response = await async_client.get("/api/market/commodities")
+
+        assert response.status_code == 500

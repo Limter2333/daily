@@ -10,6 +10,12 @@ import type {
   CategorySummary,
   SchedulerJob,
   SystemStats,
+  MarketType,
+  MarketIndex,
+  MarketOverview,
+  MarketDetail,
+  SectorData,
+  StockData,
 } from '../types';
 
 const logger = createLogger('api');
@@ -255,6 +261,50 @@ export const healthCheck = async (): Promise<{ status: string; version: string; 
  */
 export const getStats = async (): Promise<SystemStats> => {
   return api.get('/stats');
+};
+
+// ==================== 市场数据 API ====================
+
+/**
+ * 获取首页市场概览
+ */
+export const getMarketOverview = async (): Promise<MarketOverview> => {
+  return api.get('/market/overview');
+};
+
+/**
+ * 获取市场指数
+ */
+export const getMarketIndices = async (market: MarketType): Promise<MarketIndex[]> => {
+  return api.get('/market/indices', { params: { market } });
+};
+
+/**
+ * 获取板块涨跌排行
+ */
+export const getMarketSectors = async (market: MarketType): Promise<{ rise: SectorData[]; fall: SectorData[] }> => {
+  return api.get('/market/sectors', { params: { market } });
+};
+
+/**
+ * 获取个股涨跌排行
+ */
+export const getMarketStocks = async (market: MarketType): Promise<{ rise: StockData[]; fall: StockData[] }> => {
+  return api.get('/market/stocks', { params: { market } });
+};
+
+/**
+ * 获取市场详情（指数+板块+个股）
+ */
+export const getMarketDetail = async (market: MarketType): Promise<MarketDetail> => {
+  return api.get('/market/detail', { params: { market } });
+};
+
+/**
+ * 获取贵金属行情
+ */
+export const getCommodities = async (): Promise<MarketIndex[]> => {
+  return api.get('/market/commodities');
 };
 
 export default api;

@@ -138,3 +138,86 @@ export interface SystemStats {
   latest_news: NewsItem | null;
   latest_briefing: Briefing | null;
 }
+
+// ==================== 市场数据类型 ====================
+
+/**
+ * 市场类型
+ */
+export type MarketType = 'cn' | 'us' | 'hk' | 'commodities';
+
+/**
+ * 市场配置
+ */
+export const MARKET_CONFIG: Record<MarketType, { name: string; icon: string }> = {
+  cn: { name: '中国', icon: '🇨🇳' },
+  us: { name: '美国', icon: '🇺🇸' },
+  hk: { name: '香港', icon: '🇭🇰' },
+  commodities: { name: '大宗商品', icon: '🏆' },
+};
+
+/**
+ * 市场指数
+ */
+export interface MarketIndex {
+  code: string;
+  name: string;
+  current: number;
+  change: number;
+  changePercent: number;
+  volume?: number;
+  amount?: number;
+  high?: number;
+  low?: number;
+  open?: number;
+  prevClose?: number;
+}
+
+/**
+ * 板块数据
+ */
+export interface SectorData {
+  name: string;
+  changePercent: number;
+  leadStock?: string;
+  volume?: number;
+  amount?: number;
+}
+
+/**
+ * 个股数据
+ */
+export interface StockData {
+  code: string;
+  name: string;
+  price: number;
+  changePercent: number;
+  change: number;
+  volume?: number;
+  amount?: number;
+}
+
+/**
+ * 市场概览（首页用）
+ */
+export interface MarketOverview {
+  indices: MarketIndex[];
+  commodities: MarketIndex[];
+  updateTime: string;
+}
+
+/**
+ * 市场详情
+ */
+export interface MarketDetail {
+  indices: MarketIndex[];
+  sectors: {
+    rise: SectorData[];
+    fall: SectorData[];
+  };
+  stocks: {
+    rise: StockData[];
+    fall: StockData[];
+  };
+  updateTime: string;
+}
