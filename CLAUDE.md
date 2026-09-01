@@ -93,6 +93,9 @@ python scripts/discover.py
 # 使用 self-loop 技能进行自动迭代开发
 /self-loop
 
+# 使用 self-multi-loop 技能进行多需求顺序执行
+/self-multi-loop 需求1; 需求2; 需求3
+
 # 使用 self-discover 技能发现待办事项
 /self-discover
 ```
